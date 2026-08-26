@@ -166,17 +166,25 @@ class PinViewModel(
         )
     }
 
+    init {
+        // Tied to the ViewModel's lifetime, not the composition's — see issue #677. Without this an
+        // active PIN lockout was not surfaced after process death.
+        restorePinLockoutState()
+    }
+
+    private fun restorePinLockoutState() {
+        if (viewState.value.pinState != PinValidationState.VALIDATE) return
+        viewModelScope.launch {
+            when (val lockoutState = interactor.getPinLockoutState()) {
+                is PinLockoutState.Active -> startLockoutTick(lockoutState.remaining.inWholeMilliseconds)
+                PinLockoutState.Idle -> Unit
+            }
+        }
+    }
+
     override fun handleEvents(event: Event) {
         when (event) {
-            is Event.Init -> {
-                if (viewState.value.pinState != PinValidationState.VALIDATE) return
-                viewModelScope.launch {
-                    when (val lockoutState = interactor.getPinLockoutState()) {
-                        is PinLockoutState.Active -> startLockoutTick(lockoutState.remaining.inWholeMilliseconds)
-                        PinLockoutState.Idle -> Unit
-                    }
-                }
-            }
+            is Event.Init -> restorePinLockoutState()
 
             is Event.OnQuickPinLengthChanged -> {
                 if (viewState.value.isLockedOut) return

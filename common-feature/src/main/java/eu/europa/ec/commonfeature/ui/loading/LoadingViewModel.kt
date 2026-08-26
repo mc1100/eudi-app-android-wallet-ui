@@ -95,6 +95,29 @@ abstract class LoadingViewModel : MviViewModel<Event, State, Effect>() {
         )
     }
 
+    /**
+     * Guards the one-shot initial work. Deliberately NOT saveable: it must survive configuration
+     * change — where re-running would start the flow twice — but reset with the process, so a
+     * restored screen re-runs against its brand-new ViewModel.
+     *
+     * This is what replaces `OneTimeLaunchedEffect` here. The work cannot move into `init` because
+     * it needs a `Context` from the composition, and the guard lives here rather than on
+     * [Event.DoWork] because subclasses re-send that event as their error-retry path, which must
+     * stay ungated. See issue #677.
+     */
+    private var hasRunInitialWork = false
+
+    /**
+     * Called from a plain `LaunchedEffect(Unit)`, which re-runs whenever the composition is rebuilt;
+     * the ViewModel-scoped guard above is what makes this once per ViewModel instance.
+     */
+    fun startInitialWork(context: Context) {
+        if (hasRunInitialWork) return
+        hasRunInitialWork = true
+        setEvent(Event.Initialize)
+        setEvent(Event.DoWork(context))
+    }
+
     override fun handleEvents(event: Event) {
         when (event) {
 

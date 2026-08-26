@@ -47,6 +47,14 @@ sealed class Effect : ViewSideEffect {
 class SplashViewModel(
     private val interactor: SplashInteractor,
 ) : MviViewModel<Event, State, Effect>() {
+    init {
+        // Tied to the ViewModel's lifetime, not the composition's. This used to be dispatched from
+        // the screen via `OneTimeLaunchedEffect`, whose "already ran" flag is `rememberSaveable` and
+        // therefore came back `true` after process death — suppressing initialisation for a
+        // brand-new ViewModel in a brand-new process. See issue #677.
+        enterApplication()
+    }
+
     override fun setInitialState(): State = State()
 
     override fun handleEvents(event: Event) {

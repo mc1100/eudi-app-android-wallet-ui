@@ -32,7 +32,6 @@ import androidx.navigation.NavController
 import eu.europa.ec.uilogic.component.content.ContentHeader
 import eu.europa.ec.uilogic.component.content.ContentScreen
 import eu.europa.ec.uilogic.component.content.ScreenNavigateAction
-import eu.europa.ec.uilogic.component.utils.OneTimeLaunchedEffect
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
@@ -84,9 +83,8 @@ fun LoadingScreen(
         )
     }
 
-    OneTimeLaunchedEffect {
-        viewModel.setEvent(Event.Initialize)
-        viewModel.setEvent(Event.DoWork(context))
+    LaunchedEffect(Unit) {
+        viewModel.startInitialWork(context)
     }
 }
 

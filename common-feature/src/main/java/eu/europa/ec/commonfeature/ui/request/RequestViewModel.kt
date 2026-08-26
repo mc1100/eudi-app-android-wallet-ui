@@ -141,9 +141,24 @@ abstract class RequestViewModel : MviViewModel<Event, State, Effect>() {
         )
     }
 
+    /**
+     * Guards the one-shot initial work. Deliberately NOT saveable: it must survive configuration
+     * change — where re-running would submit the request twice — but reset with the process, so a
+     * restored screen re-runs against its brand-new ViewModel.
+     *
+     * This is what replaces `OneTimeLaunchedEffect` here. The work cannot move into `init` because
+     * it needs `intentAction` from the composition, and [Event.DoWork] stays ungated because it is
+     * the error-retry path. See issue #677.
+     */
+    private var hasRunInitialWork = false
+
     override fun handleEvents(event: Event) {
         when (event) {
             is Event.Init -> {
+                // Sent from a plain LaunchedEffect(Unit), which re-runs whenever the composition is
+                // rebuilt; the ViewModel-scoped flag is what makes it once per instance.
+                if (hasRunInitialWork) return
+                hasRunInitialWork = true
                 init(event.intentAction)
                 doWork()
             }

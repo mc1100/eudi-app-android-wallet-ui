@@ -126,28 +126,37 @@ class BiometricViewModel(
         )
     }
 
-    override fun handleEvents(event: Event) {
-        when (event) {
-            is Event.Init -> {
-                viewModelScope.launch {
-                    val userBiometricsAreEnabled = biometricInteractor.getBiometricUserSelection()
-                    setState {
-                        copy(userBiometricsAreEnabled = userBiometricsAreEnabled)
-                    }
-                    when (val lockoutState = biometricInteractor.getPinLockoutState()) {
-                        is PinLockoutState.Active -> startLockoutTick(lockoutState.remaining.inWholeMilliseconds)
-                        PinLockoutState.Idle -> Unit
-                    }
-                    if (
-                        biometricUiConfig.shouldInitializeBiometricAuthOnCreate
-                        && userBiometricsAreEnabled
-                    ) {
-                        setEffect {
-                            Effect.InitializeBiometricAuthOnCreate
-                        }
-                    }
+    init {
+        // Tied to the ViewModel's lifetime, not the composition's — see issue #677. Without this,
+        // after process death the login screen came up reporting biometrics off, with no lockout
+        // tick and no automatic prompt.
+        restoreBiometricState()
+    }
+
+    private fun restoreBiometricState() {
+        viewModelScope.launch {
+            val userBiometricsAreEnabled = biometricInteractor.getBiometricUserSelection()
+            setState {
+                copy(userBiometricsAreEnabled = userBiometricsAreEnabled)
+            }
+            when (val lockoutState = biometricInteractor.getPinLockoutState()) {
+                is PinLockoutState.Active -> startLockoutTick(lockoutState.remaining.inWholeMilliseconds)
+                PinLockoutState.Idle -> Unit
+            }
+            if (
+                biometricUiConfig.shouldInitializeBiometricAuthOnCreate
+                && userBiometricsAreEnabled
+            ) {
+                setEffect {
+                    Effect.InitializeBiometricAuthOnCreate
                 }
             }
+        }
+    }
+
+    override fun handleEvents(event: Event) {
+        when (event) {
+            is Event.Init -> restoreBiometricState()
 
             is Event.OnBiometricsClicked -> {
                 setState { copy(error = null) }

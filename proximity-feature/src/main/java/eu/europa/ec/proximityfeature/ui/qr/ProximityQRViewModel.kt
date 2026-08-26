@@ -69,6 +69,15 @@ class ProximityQRViewModel(
     private val uiSerializer: UiSerializer,
     @InjectedParam private val requestUriConfigRaw: String
 ) : MviViewModel<Event, State, Effect>() {
+    init {
+        // Tied to the ViewModel's lifetime, not the composition's. This used to be dispatched from
+        // the screen via `OneTimeLaunchedEffect`, whose "already ran" flag is `rememberSaveable` and
+        // therefore came back `true` after process death — suppressing initialisation for a
+        // brand-new ViewModel in a brand-new process. See issue #677.
+        initializeConfig()
+        generateQrCode()
+    }
+
 
     private var interactorJob: Job? = null
 

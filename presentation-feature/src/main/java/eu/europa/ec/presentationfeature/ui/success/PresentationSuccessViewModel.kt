@@ -35,6 +35,13 @@ class PresentationSuccessViewModel(
     @InjectedParam private val presentationScopeId: String
 ) : DocumentSuccessViewModel() {
 
+    init {
+        // On the subclass, not on DocumentSuccessViewModel: doWork() is abstract, so an init in the
+        // base class would invoke the override before this subclass's constructor had run.
+        // Tied to the ViewModel's lifetime rather than the composition's — see issue #677.
+        doWork()
+    }
+
     override fun getNextScreenConfigNavigation(): ConfigNavigation {
         val redirectUri = interactor.redirectUri
         val deepLinkWithUriOrPopToDashboard = ConfigNavigation(

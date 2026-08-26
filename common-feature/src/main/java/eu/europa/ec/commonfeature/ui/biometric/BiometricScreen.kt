@@ -54,7 +54,6 @@ import eu.europa.ec.uilogic.component.content.ImePaddingConfig
 import eu.europa.ec.uilogic.component.content.ScreenNavigateAction
 import eu.europa.ec.uilogic.component.preview.PreviewTheme
 import eu.europa.ec.uilogic.component.preview.ThemeModePreviews
-import eu.europa.ec.uilogic.component.utils.OneTimeLaunchedEffect
 import eu.europa.ec.uilogic.component.utils.SIZE_MEDIUM
 import eu.europa.ec.uilogic.component.utils.SPACING_LARGE
 import eu.europa.ec.uilogic.component.utils.SPACING_SMALL
@@ -172,10 +171,6 @@ fun BiometricScreen(
             padding = it,
             pinInputState = pinInputState
         )
-    }
-
-    OneTimeLaunchedEffect {
-        viewModel.setEvent(Event.Init)
     }
 }
 

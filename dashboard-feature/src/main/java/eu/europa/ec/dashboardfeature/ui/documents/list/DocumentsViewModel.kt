@@ -165,6 +165,14 @@ class DocumentsViewModel(
     private val resourceProvider: ResourceProvider,
     private val uiSerializer: UiSerializer,
 ) : MviViewModel<Event, State, Effect>() {
+    init {
+        // Tied to the ViewModel's lifetime, not the composition's. This used to be dispatched from
+        // the screen via `OneTimeLaunchedEffect`, whose "already ran" flag is `rememberSaveable` and
+        // therefore came back `true` after process death — suppressing initialisation for a
+        // brand-new ViewModel in a brand-new process. See issue #677.
+        filterStateChanged()
+    }
+
 
     private var retryDeferredDocsJob: Job? = null
     private var fetchDocumentsJob: Job? = null
